@@ -6,10 +6,10 @@ if nargin == 8
 end
 
 %% Calculate implied volatilities
-O = ones(size(PC));                                                         
+O = ones(size(PC));
 IV = BlackIV(PC,Price,F*O,K,r*O,T*O);                                       % Calculates the implied volatilites based on the BSM model, function in misc folder
 
-    
+
 
 indxnonNaN = ~isnan(IV);                                                    % remove NaN arguments from VIX Calculations, this defines a vector of size IV with 1 for not NaN and 0 for a Nan argument
 K = K(indxnonNaN);                                                          % Filter strikes based on non-NaN IV's
@@ -30,12 +30,29 @@ for i=1:numel(Kdiff)                                                        % Th
 end
 
 
- clf
- plot(Kdiff, IVdiff, 'LineStyle', 'no', 'Marker', 'o')
- xlabel('Strike')
- ylabel('Implied Vol')
- title(['DTM = ' num2str(T*365)])
-% error
+%% Outlier Filtering
+p = polyfit(Kdiff, IVdiff, 3);
+model = p(1).*Kdiff.^3 + p(2).*Kdiff.^2 + p(3).*Kdiff + p(4);
+diff = sqrt((model - IVdiff).^2);
+for z = 1:length(diff)
+   if (100*diff(z)) > 3
+       IVdiff(z) = NaN; Kdiff(z) = NaN;
+   else
+   end
+       
+end
+index = find(~isnan(IVdiff) == 1);
+IVdiff = IVdiff(index); Kdiff = Kdiff(index);
+
+%% Plot implied vol against strike
+clf
+plot(Kdiff, IVdiff, 'LineStyle', 'no', 'Marker', 'o')
+xlabel('Strike')
+ylabel('Implied Vol')
+title(['DTM = ' num2str(T*365)])
+%error
+
+%% Continue with integral calc
 try
     f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
     Integral = quadgk(f,Klevels(1), Klevels(2));
@@ -60,7 +77,7 @@ switch SplineType
         else
             Mon = K./F;                                                    % Calculates moneyness vector
             beta = regress(IV, [ones(size(Mon)) Mon  Mon.^2 Mon.^3]);      % Fits IV with cubic function
-            Monk = (k./F)';                                                         
+            Monk = (k./F)';
             Datak = [ones(size(Monk)) Monk  Monk.^2 Monk.^3];              % Vector with moneyness, moneyness squared and moneyness cubed
             IVp = (Datak*beta)';                                           % Calculates the IV fit from the regressed beta
             indleft = find(k<min(K));
@@ -71,7 +88,7 @@ switch SplineType
             IVp(indright) = [1 maxM maxM^2 maxM^3]*beta;
         end
         
-    
+        
     case 2 % Cubic Hermite polynomial
         if 0
             IVp = interp1(K,IV,k,'spline', NaN);
@@ -104,7 +121,7 @@ switch SplineType
         else
             Mon = K./F;                                                    % Calculates moneyness vector
             beta = regress(IV, [ones(size(Mon)) 6.*Mon  15.*Mon.^2 15.*Mon.^3]);      % Fits IV with cubic function
-            Monk = (k./F)';                                                         
+            Monk = (k./F)';
             Datak = [ones(size(Monk)) 6.*Monk  15.*Monk.^2 15.*Monk.^3];              % Vector with moneyness, moneyness squared and moneyness cubed
             IVp = (Datak*beta)';                                           % Calculates the IV fit from the regressed beta
             indleft = find(k<min(K));
@@ -116,7 +133,7 @@ switch SplineType
         end
         
 end
-        
+
 
 
 
@@ -125,7 +142,7 @@ O = ones(size(k));                                                          % De
 Put = Black(2*O,F*O,k,r*O,T*O,IVp);                                         % Calculates option prices based on BSM model
 Call = Black(1*O,F*O,k,r*O,T*O,IVp);
 Price = (k>=F).*Call + (k<F).*Put;                                          % makes price vector (for puts and calls)
-Price(Price<0) = 0;                                                         % Filters out negative option values 
+Price(Price<0) = 0;                                                         % Filters out negative option values
 
 
 

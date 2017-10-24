@@ -58,9 +58,10 @@ for y = 2:2
     F = [];
     F = [];
     TT = [];
+    quote_times = [];
     straddle_VIX = [];
     %% Iterate over each business day
-    for k = 1:length(datesUse)                                                                          % This for loop iterates over all the different trading days in our sample
+    for k = 1:1%length(datesUse)                                                                          % This for loop iterates over all the different trading days in our sample
         tic;
         current_date = datestr(datesUse(k),26);
         disp(datestr(datesUse(k), 26))                                                                  % Displays the current trading day in format 'yyyy/mm/dd'
@@ -81,6 +82,7 @@ for y = 2:2
             % The find() function which returns a vector containing the index positions of all the nonzero elements of its input, in this case that find the index positions of all the nonzero elements of when quote Time equal unique time
             
             currentTime = uniqueTimes(i);
+            quote_times = [quote_times; currentTime];
             
             
             %% initalise variables
@@ -108,7 +110,7 @@ for y = 2:2
                 InTheMoneyPut = opdata(:,1)<Ftmp_;
 
                 
-                [Calls1, Strike_Call1, Puts1, Strike_Put1] = Monotonicity_Filter(opdata(~InTheMoneyCall,2), opdata(~InTheMoneyCall,1), opdata(~InTheMoneyPut,3),opdata(~InTheMoneyPut,1));
+                [Calls, Strike_Call, Puts, Strike_Put] = Monotonicity_Filter(opdata(~InTheMoneyCall,2), opdata(~InTheMoneyCall,1), opdata(~InTheMoneyPut,3),opdata(~InTheMoneyPut,1));
                 
                 
                 %% Plots
@@ -127,11 +129,9 @@ for y = 2:2
                 
                 %[opdata(~InTheMoneyPut,1) opdata(~InTheMoneyPut,3)]
                 
-                opdatatmp = [[opdata(~InTheMoneyCall,1);opdata(~InTheMoneyPut,1)] [0*opdata(~InTheMoneyCall,1)+1;0*opdata(~InTheMoneyPut,1)+2] [opdata(~InTheMoneyCall,2); opdata(~InTheMoneyPut,3)]];                           % Defines the new option data in a matrix where the first column is the strike prices, second is calls, third is put (second and third columns will have a 1 or 0 for true or false), then column four gives the price
-                opdatatmp2 = [[Strike_Call; Strike_Put] [0*Strike_Call+1;0*Strike_Put+2] [Calls; Puts]];
-                opdatatmp = opdatatmp(sum(isnan(opdatatmp),2)==0,:);                                    % remove NaN
-                isequal(opdatatmp, opdatatmp2)
-                %[Strike_Put Puts]
+                %opdatatmp = [[opdata(~InTheMoneyCall,1);opdata(~InTheMoneyPut,1)] [0*opdata(~InTheMoneyCall,1)+1;0*opdata(~InTheMoneyPut,1)+2] [opdata(~InTheMoneyCall,2); opdata(~InTheMoneyPut,3)]];                           % Defines the new option data in a matrix where the first column is the strike prices, second is calls, third is put (second and third columns will have a 1 or 0 for true or false), then column four gives the price
+                opdatatmp = [[Strike_Call; Strike_Put] [0*Strike_Call+1;0*Strike_Put+2] [Calls; Puts]];
+                %opdatatmp = opdatatmp(sum(isnan(opdatatmp),2)==0,:);                                    % remove NaN
                 
                 TT = [TT; T*365];
                 %calculateIntegral( func, K, PC, Price, r, T, F, Klevels )
@@ -153,6 +153,7 @@ for y = 2:2
                 Ttmp(j) = T;
                 Vtmp(j) = VIX;
                 Datatmp{j,1} = opdata;
+                
             end
             weight1 = (mat(2)-30)/(mat(2)-mat(1));
             weight2 = 1-weight1;
@@ -178,36 +179,21 @@ for y = 2:2
         
         toc
     end
+
     
     
 end
 
-Act_VIX
-straddle_VIX
+Act_VIX = Act_VIX(1)*ones(length(straddle_VIX), 1);
+straddle_VIX;
 
 size(Act_VIX)
 size(straddle_VIX)
+size(quote_times)
+quote_times = [8.30;9;9.30;10;10.30;11;11.30;12;12.30;13;13.30;14;14.30;15];
 
-%plot(datesUse, Act_VIX,'b--o', datesUse, straddle_VIX, 'g--*')
+plot(quote_times, Act_VIX, 'b--o',quote_times, straddle_VIX, 'g--*')
 
-
-
-% weight_short = NaN*ones(length(mat)-1,1); weight_long = weight_short;
-% VIX =  NaN*ones(length(mat)-2,1);
-%
-% t = mat(1);
-% for i=2:length(mat)
-%     T = mat(i);
-%     weight_short(i-1) = (T-30)/(T-t);
-%     weight_long(i-1) = (30-t)/(T-t);
-% end
-% [weight_short weight_long]
-% for i=1:length(weight_short)-1
-%     VIX(i) = calc_VIX(1).*weight_short(i) + calc_VIX(i+1).*weight_long(i);
-% end
-% VIX
-
-% mat = unique(mat)
 % %% Plots
 % subplot(3,2,1)
 % plot(Dates(:, 1), VIX_diff(:, 1), 'b--o')

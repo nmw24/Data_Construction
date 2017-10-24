@@ -48,7 +48,7 @@ end
 frequency = 30;                                                                                    % only works in particular cases
 VIX_diff = NaN*ones(size(Dates));
 
-for y = 1:1
+for y = 2:2
     datesUse = Dates(:, y);
     Act_VIX = Recorded_VIX(:, y);
     
@@ -106,160 +106,21 @@ for y = 1:1
                 clf;
                 InTheMoneyCall = opdata(:,1)>Ftmp_;
                 InTheMoneyPut = opdata(:,1)<Ftmp_;
-                
-                %% Calls Monotonicity Filter
-                Calls = opdata(~InTheMoneyCall,2);
-                Strike_Call = opdata(~InTheMoneyCall,1);
-                index = find(~isnan(Calls) == 1);
-                Calls = Calls(index);
-                Strike_Call = Strike_Call(index);
-                
-                midway_indx = floor(length(Calls)/2);
-                Calls_Lower = Calls(midway_indx+1:end);
-                Strike_Lower = Strike_Call(midway_indx+1:end);
-                Calls_Upper = Calls(1:midway_indx);
-                Strike_Upper = Strike_Call(1:midway_indx);
-                
-                counter = 0;
-                Calls_indx = [];
-                for y = 1:(length(Calls_Lower) - 2)
-                    %if (Calls_Upper(y) > Calls_Upper(y+1)) == 1
-                    if and(Calls_Lower(y) > Calls_Lower(y+1), Calls_Lower(y) > Calls_Lower(y+2)) == 1
-                        Calls_indx = [Calls_indx; 1];
-                    else
-                        Calls_indx = [Calls_indx; 0];
-                        counter = counter + 1;
-                    end
-                    
-                end
-                if counter ~= 0
-                    disp(['Total of ' num2str(counter) ' violations of monotonicity, calls lower'])
-                    index = find(Calls_indx == 1);
-                    Calls_Lower = Calls_Lower(index); Strike_Lower = Strike_Lower(index);
-                else
-                end   
-                
-                counter = 0;
-                Calls_indx = [];
-                Calls_Upper = flipud(Calls_Upper); Strike_Upper = flipud(Strike_Upper);
-                for Y = 1:(length(Calls_Upper) - 2)
-                    %if (Calls_Upper(y) < Calls_Upper(y+1)) == 1
-                    if and(Calls_Upper(Y) < Calls_Upper(Y+1), Calls_Upper(Y) < Calls_Upper(Y+2)) == 1
-                        Calls_indx = [Calls_indx; 1];
-                    else
-                        Calls_indx = [Calls_indx; 0];
-                        counter = counter + 1;
-                    end
-                    
-                end
-                if counter ~= 0
-                    disp(['Total of ' num2str(counter) ' violations of monotonicity, calls upper'])
-                    index = find(Calls_indx == 1);
-                    Calls_Upper = flipud(Calls_Upper(index)); Strike_Upper = flipud(Strike_Upper(index));
-                else
-                    Calls_Upper = flipud(Calls_Upper); Strike_Upper = flipud(Strike_Upper);
-                end
-
-               
-                Calls = [Calls_Upper; Calls_Lower];
-                Strike_Call = [Strike_Upper; Strike_Lower];
-                
-                if length(Calls) > 1
-                    if Calls(1) < Calls(2)
-                        Calls(1) = []; Strike_Call(1) = [];
-                    else
-                    end
-                    
-                    if Calls(length(Calls)) > Calls(length(Calls)-1)
-                        Calls(length(Calls)) = []; Strike_Call(length(Strike_Call)) = [];
-                    else
-                    end
-                else
-                end
-                
 
                 
-                %% Puts Monotonicity Filter
-                Puts = opdata(~InTheMoneyPut,3);
-                Strike_Put = opdata(~InTheMoneyPut,1);
-                index = find(~isnan(Puts) == 1);
-                Puts = Puts(index);
-                Strike_Put = Strike_Put(index);
-
-                midway_indx = floor(length(Puts)/2);
-                Puts_Lower = Puts(midway_indx+1:end);
-                Strike_Lower = Strike_Put(midway_indx+1:end);
-                Puts_Upper = Puts(1:midway_indx);
-                Strike_Upper = Strike_Put(1:midway_indx);
+                [Calls1, Strike_Call1, Puts1, Strike_Put1] = Monotonicity_Filter(opdata(~InTheMoneyCall,2), opdata(~InTheMoneyCall,1), opdata(~InTheMoneyPut,3),opdata(~InTheMoneyPut,1));
                 
-                counter = 0;
-                Puts_indx = [];
-                for g = 1:(length(Puts_Lower) - 2)
-                    %if (Puts_Lower(y) < Puts_Lower(y+1)) == 1
-                    if and(Puts_Lower(g) < Puts_Lower(g+1), Puts_Lower(g) < Puts_Lower(g+2)) == 1
-                        Puts_indx = [Puts_indx; 1];
-                    else
-                        Puts_indx = [Puts_indx; 0];
-                        counter = counter + 1;
-                    end
-                    
-                end
-                if counter ~= 0
-                    disp(['Total of ' num2str(counter) ' violations of monotonicity, puts lower'])
-                    index = find(Puts_indx == 1);
-                    Puts_Lower = Puts_Lower(index); Strike_Lower = Strike_Lower(index);
-                else
-                end
-
-                
-                counter = 0;
-                Puts_Upper = flipud(Puts_Upper); Strike_Upper = flipud(Strike_Upper);
-                Puts_indx = [];
-                for J = 1:(length(Puts_Upper) - 2)
-                    %if (Puts_Upper(y) > Puts_Upper(y+1)) == 1
-                    if and(Puts_Upper(J) > Puts_Upper(J+1), Puts_Upper(J) > Puts_Upper(J+2)) == 1
-                        Puts_indx = [Puts_indx; 1];
-                    else
-                        Puts_indx = [Puts_indx; 0];
-                        counter = counter + 1;
-                    end
-                    
-                end
-                if counter ~= 0
-                    disp(['Total of ' num2str(counter) ' violations of monotonicity, puts upper'])
-                    index = find(Puts_indx == 1);
-                    Puts_Upper = flipud(Puts_Upper(index)); Strike_Upper = flipud(Strike_Upper(index));
-                else
-                    Puts_Upper = flipud(Puts_Upper); Strike_Upper = flipud(Strike_Upper);
-                end
-                Puts = [Puts_Upper; Puts_Lower];
-                Strike_Put = [Strike_Upper; Strike_Lower];
-                
-                if length(Puts) > 1
-                    if Puts(1) > Puts(2)
-                        Puts(1) = []; Strike_Put(1) = [];
-                    else
-                    end
-                    
-                    if Puts(length(Puts)) < Puts(length(Puts)-1)
-                        Puts(length(Puts)) = []; Strike_Put(length(Strike_Put)) = [];
-                    else
-                    end
-                else
-                end
-                
-
                 
                 %% Plots
                 
-%                 plot(Strike_Call./Ftmp_, Calls);
-%                 hold on;
-%                 plot(Strike_Put./Ftmp_, Puts);
-%                 xlim([0 2.0])
-%                 title([datestr(currentTime,30) ' DTM = ' num2str(T*365)]);
-%                 shg;
-%                 pause(0.1)
-%                 continue;
+                %                 plot(Strike_Call./Ftmp_, Calls);
+                %                 hold on;
+                %                 plot(Strike_Put./Ftmp_, Puts);
+                %                 xlim([0 2.0])
+                %                 title([datestr(currentTime,30) ' DTM = ' num2str(T*365)]);
+                %                 shg;
+                %                 pause(0.1)
+                %                 continue;
                 
                 % determine OTM options
                 % OTM = (K<=FATMtmp_)*2 + (K>FATMtmp_)*1;
@@ -267,7 +128,7 @@ for y = 1:1
                 %[opdata(~InTheMoneyPut,1) opdata(~InTheMoneyPut,3)]
                 
                 opdatatmp = [[opdata(~InTheMoneyCall,1);opdata(~InTheMoneyPut,1)] [0*opdata(~InTheMoneyCall,1)+1;0*opdata(~InTheMoneyPut,1)+2] [opdata(~InTheMoneyCall,2); opdata(~InTheMoneyPut,3)]];                           % Defines the new option data in a matrix where the first column is the strike prices, second is calls, third is put (second and third columns will have a 1 or 0 for true or false), then column four gives the price
-                opdatatmp2 = [[Strike_Call; Strike_Put] [0*Strike_Call+1;0*Strike_Put+2] [Calls; Puts]];     
+                opdatatmp2 = [[Strike_Call; Strike_Put] [0*Strike_Call+1;0*Strike_Put+2] [Calls; Puts]];
                 opdatatmp = opdatatmp(sum(isnan(opdatatmp),2)==0,:);                                    % remove NaN
                 isequal(opdatatmp, opdatatmp2)
                 %[Strike_Put Puts]
@@ -330,10 +191,10 @@ size(straddle_VIX)
 %plot(datesUse, Act_VIX,'b--o', datesUse, straddle_VIX, 'g--*')
 
 
- 
-% weight_short = NaN*ones(length(mat)-1,1); weight_long = weight_short; 
+
+% weight_short = NaN*ones(length(mat)-1,1); weight_long = weight_short;
 % VIX =  NaN*ones(length(mat)-2,1);
-% 
+%
 % t = mat(1);
 % for i=2:length(mat)
 %     T = mat(i);

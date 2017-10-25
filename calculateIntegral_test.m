@@ -42,10 +42,41 @@ for z = 1:length(diff)
        
 end
 index = find(~isnan(IVdiff) == 1);
-IVdiff = IVdiff(index); Kdiff = Kdiff(index);
+IVdiff = IVdiff(index); Kdiff = Kdiff(index); 
+
+%% Monotonicity Filtering
+min_indx = find(IVdiff == min(IVdiff));
+left_IV = flipud(IVdiff(1:min_indx));
+right_IV = IVdiff((min_indx + 1):length(IVdiff));
+K_left = flipud(Kdiff(1:min_indx));
+K_right = Kdiff((min_indx + 1):length(Kdiff));
+
+
+
+counter = 0;
+indx = [];
+for z = 1:(length(left_IV)-2)
+   if and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)) == 1
+      indx = [indx;1]; 
+   else
+       indx = [indx;0];
+       counter = counter+1;
+   end
+end
+if counter ~= 0
+    index = find(indx == 1);
+    left_IV = flipud(left_IV(index)); K_left = flipud(K_left(index));
+else
+    left_IV = flipud(left_IV); K_left = flipud(K_left);
+end
+
+% Re-package IVs and strikes
+IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
+
 
 %% Plot implied vol against strike
 clf
+%plot(K_left, left_IV, 'LineStyle', 'no', 'Marker', 'o')
 plot(Kdiff, IVdiff, 'LineStyle', 'no', 'Marker', 'o')
 xlabel('Strike')
 ylabel('Implied Vol')

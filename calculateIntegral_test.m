@@ -29,14 +29,17 @@ for i=1:numel(Kdiff)                                                        % Th
     IVdiff(i) = datatmp(1,1);                                               % Takes the largest IV and appends it into the vecor for IVdiff
 end
 
-
+Kdiff_original = Kdiff;
+IVdiff_original = IVdiff;
 %% Outlier Filtering
 p = polyfit(Kdiff, IVdiff, 3);
 model = p(1).*Kdiff.^3 + p(2).*Kdiff.^2 + p(3).*Kdiff + p(4);
+
+
 diff = sqrt((model - IVdiff).^2);
 for z = 1:length(diff)
    if (100*diff(z)) > 3
-       IVdiff(z) = NaN; Kdiff(z) = NaN;
+       IVdiff(z) = NaN; Kdiff(z) = NaN; 
    else
    end
        
@@ -51,8 +54,6 @@ right_IV = IVdiff((min_indx + 1):length(IVdiff));
 K_left = flipud(Kdiff(1:min_indx));
 K_right = Kdiff((min_indx + 1):length(Kdiff));
 
-
-
 counter = 0;
 indx = [];
 for z = 1:(length(left_IV)-2)
@@ -65,7 +66,7 @@ for z = 1:(length(left_IV)-2)
 end
 if counter ~= 0
     index = find(indx == 1);
-    left_IV = flipud(left_IV(index)); K_left = flipud(K_left(index));
+    left_IV = flipud(left_IV(index)); K_left = flipud(K_left(index)); 
 else
     left_IV = flipud(left_IV); K_left = flipud(K_left);
 end
@@ -75,13 +76,21 @@ IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
 
 
 %% Plot implied vol against strike
-clf
-%plot(K_left, left_IV, 'LineStyle', 'no', 'Marker', 'o')
-plot(Kdiff, IVdiff, 'LineStyle', 'no', 'Marker', 'o')
+clf;
+plot(Kdiff_original, model, 'LineStyle', 'no', 'Marker', 'o')
+hold on
+plot(Kdiff, IVdiff, 'LineStyle', 'no', 'Marker', '*')
+hold on
+plot(Kdiff_original, IVdiff_original, 'LineStyle', 'no', 'Marker', '+')
 xlabel('Strike')
 ylabel('Implied Vol')
-title(['DTM = ' num2str(T*365)])
-%error
+legend('best fit', 'filtered data', 'raw data')
+
+
+% Use model implied vol and original K for integral calc. This is a TEST
+% ONLY
+%Kdiff = Kdiff_original; IVdiff = model;
+
 
 %% Continue with integral calc
 try

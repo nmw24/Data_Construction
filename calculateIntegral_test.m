@@ -28,9 +28,18 @@ for i=1:numel(Kdiff)                                                        % Th
     datatmp = sortrows(datatmp,-2);                                         % Sorts the data of IV and OTM in terms of descending (largest first) IV's
     IVdiff(i) = datatmp(1,1);                                               % Takes the largest IV and appends it into the vecor for IVdiff
 end
-
-Kdiff_original = Kdiff;
-IVdiff_original = IVdiff;
+%% Strike Filtering
+for Y = 1:2
+    for z = 1:(length(Kdiff)-1)
+        if (Kdiff(z+1) - Kdiff(z)) > 100
+            Kdiff(z+1) = NaN; IVdiff(z+1) = NaN;
+        else
+        end
+    end
+    indx = find(~isnan(Kdiff) == 1);
+    Kdiff = Kdiff(indx); IVdiff = IVdiff(indx);
+    Kdiff_original = Kdiff; IVdiff_original = IVdiff;
+end
 %% Outlier Filtering
 p = polyfit(Kdiff, IVdiff, 3);
 model = p(1).*Kdiff.^3 + p(2).*Kdiff.^2 + p(3).*Kdiff + p(4);
@@ -54,10 +63,19 @@ right_IV = IVdiff((min_indx + 1):length(IVdiff));
 K_left = flipud(Kdiff(1:min_indx));
 K_right = Kdiff((min_indx + 1):length(Kdiff));
 
+% Left side
 counter = 0;
 indx = [];
-for z = 1:(length(left_IV)-2)
-   if and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)) == 1
+% for z = 1:(length(left_IV)-2)
+%    if and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)) == 1
+%       indx = [indx;1]; 
+%    else
+%        indx = [indx;0];
+%        counter = counter+1;
+%    end
+% end
+for z = 1:(length(left_IV)-8)
+   if and(and(and(and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)),and(left_IV(z) < left_IV(z+3), left_IV(z) < left_IV(z+4))),and(left_IV(z) < left_IV(z+5), left_IV(z) < left_IV(z+6))), and(left_IV(z) < left_IV(z+7), left_IV(z) < left_IV(z+8))) == 1
       indx = [indx;1]; 
    else
        indx = [indx;0];
@@ -71,35 +89,57 @@ else
     left_IV = flipud(left_IV); K_left = flipud(K_left);
 end
 
+% Right side
+counter = 0;
+indx = [];
+for z = 1:(length(right_IV)-2)
+    if and(right_IV(z) < right_IV(z+1), right_IV(z) < right_IV(z+2)) == 1
+        indx = [indx;1];
+    else
+        indx = [indx;0];
+        counter = counter+1;
+    end
+end
+if counter ~= 0
+    index = find(indx == 1);
+    right_IV = right_IV(index); K_right = K_right(index); 
+else
+    right_IV = right_IV; K_right = K_right;
+end
+
+
 % Re-package IVs and strikes
 IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
 
 
 %% Plot implied vol against strike
 clf;
-plot(Kdiff_original, model, 'LineStyle', 'no', 'Marker', 'o')
+plot(Kdiff_original./F, model, 'LineStyle', 'no', 'Marker', 'o')
 hold on
-plot(Kdiff, IVdiff, 'LineStyle', 'no', 'Marker', '*')
+plot(Kdiff./F, IVdiff, 'LineStyle', 'no', 'Marker', '*')
 hold on
-plot(Kdiff_original, IVdiff_original, 'LineStyle', 'no', 'Marker', '+')
-xlabel('Strike')
+plot(Kdiff_original./F, IVdiff_original, 'LineStyle', 'no', 'Marker', '+')
+xlabel('Moneyness')
 ylabel('Implied Vol')
+title(['DTM = ' num2str(T*365)])
 legend('best fit', 'filtered data', 'raw data')
 
 
 % Use model implied vol and original K for integral calc. This is a TEST
 % ONLY
-%Kdiff = Kdiff_original; IVdiff = model;
+Kdiff = Kdiff_original; IVdiff = model;
 
 
 %% Continue with integral calc
-try
-    f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
-    Integral = quadgk(f,Klevels(1), Klevels(2));
-catch
-    disp('went into NaN in integral calc')
-    Integral = NaN;
-end
+f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
+Integral = quadgk(f,Klevels(1), Klevels(2));
+% try
+%     f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
+%     Integral = quadgk(f,Klevels(1), Klevels(2));
+% catch
+%     disp('went into NaN in integral calc')
+%     Integral = NaN;
+% end
 
 
 

@@ -38,8 +38,45 @@ for Y = 1:2
     end
     indx = find(~isnan(Kdiff) == 1);
     Kdiff = Kdiff(indx); IVdiff = IVdiff(indx);
-    Kdiff_original = Kdiff; IVdiff_original = IVdiff;
 end
+
+%% Moneyness filter, range filter
+moneyness = Kdiff./F;
+counter = 0;
+indx = ones(length(moneyness),1);
+for z = 1:length(moneyness)
+   if moneyness(z) > 1.1
+       counter = counter + 1;
+       indx(z) = 0;
+   else
+   end
+end
+if counter ~= 0
+    index = find(indx == 1);
+    Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F
+else
+end
+% Step-size filter
+counter = 0;
+indx = ones((length(moneyness)-1),1);
+for z=1:(length(moneyness)-1)
+    step_size = sqrt((moneyness(z)-moneyness(z+1)).^2);
+    if step_size > 0.01
+        indx(z) = 0;
+        counter = counter + 1;
+    else
+    end
+end
+if counter ~= 0
+    index = find(indx == 1);
+    Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F;
+else
+end
+if ((moneyness(length(moneyness)) - moneyness(length(moneyness)-1))) > 0.01
+    Kdiff(length(moneyness)) = []; IVdiff(length(moneyness)) = [];
+else
+end
+Kdiff_original = Kdiff; IVdiff_original = IVdiff;
 %% Outlier Filtering
 p = polyfit(Kdiff, IVdiff, 3);
 model = p(1).*Kdiff.^3 + p(2).*Kdiff.^2 + p(3).*Kdiff + p(4);
@@ -84,8 +121,8 @@ end
 % Right side
 counter = 0;
 indx = [];
-for z = 1:(length(right_IV)-8)
-   if and(and(and(and(right_IV(z) < right_IV(z+1), right_IV(z) < right_IV(z+2)),and(right_IV(z) < right_IV(z+3), right_IV(z) < right_IV(z+4))),and(right_IV(z) < right_IV(z+5), right_IV(z) < right_IV(z+6))), and(right_IV(z) < right_IV(z+7), right_IV(z) < right_IV(z+8))) == 1
+for z = 1:(length(right_IV)-6)
+   if and(and(and(right_IV(z) < right_IV(z+1), right_IV(z) < right_IV(z+2)),and(right_IV(z) < right_IV(z+3), right_IV(z) < right_IV(z+4))),and(right_IV(z) < right_IV(z+5), right_IV(z) < right_IV(z+6))) == 1
       indx = [indx;1]; 
    else
        indx = [indx;0];
@@ -98,7 +135,6 @@ if counter ~= 0
 else
     right_IV = right_IV; K_right = K_right;
 end
-
 
 % Re-package IVs and strikes
 IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
@@ -123,15 +159,13 @@ IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
 
 
 %% Continue with integral calc
-f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
-Integral = quadgk(f,Klevels(1), Klevels(2));
-% try
-%     f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
-%     Integral = quadgk(f,Klevels(1), Klevels(2));
-% catch
-%     disp('went into NaN in integral calc')
-%     Integral = NaN;
-% end
+try
+    f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
+    Integral = quadgk(f,Klevels(1), Klevels(2));
+catch
+    disp('went into NaN in integral calc')
+    Integral = NaN;
+end
 
 
 

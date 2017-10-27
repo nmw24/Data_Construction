@@ -1,5 +1,5 @@
 
-function [Integral] = calculateIntegral(SplineType, func, K, PC, Price, r, T, F, Klevels )
+function [Integral, Kdiff_original, IVdiff_original, Kdiff, IVdiff, model] = calculateIntegral(SplineType, func, K, PC, Price, r, T, F, Klevels )
 
 if nargin == 8
     Klevels = [0.1 6*F];                                                    % Defines integration limits
@@ -66,14 +66,6 @@ K_right = Kdiff((min_indx + 1):length(Kdiff));
 % Left side
 counter = 0;
 indx = [];
-% for z = 1:(length(left_IV)-2)
-%    if and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)) == 1
-%       indx = [indx;1]; 
-%    else
-%        indx = [indx;0];
-%        counter = counter+1;
-%    end
-% end
 for z = 1:(length(left_IV)-8)
    if and(and(and(and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)),and(left_IV(z) < left_IV(z+3), left_IV(z) < left_IV(z+4))),and(left_IV(z) < left_IV(z+5), left_IV(z) < left_IV(z+6))), and(left_IV(z) < left_IV(z+7), left_IV(z) < left_IV(z+8))) == 1
       indx = [indx;1]; 
@@ -92,13 +84,13 @@ end
 % Right side
 counter = 0;
 indx = [];
-for z = 1:(length(right_IV)-2)
-    if and(right_IV(z) < right_IV(z+1), right_IV(z) < right_IV(z+2)) == 1
-        indx = [indx;1];
-    else
-        indx = [indx;0];
-        counter = counter+1;
-    end
+for z = 1:(length(right_IV)-8)
+   if and(and(and(and(right_IV(z) < right_IV(z+1), right_IV(z) < right_IV(z+2)),and(right_IV(z) < right_IV(z+3), right_IV(z) < right_IV(z+4))),and(right_IV(z) < right_IV(z+5), right_IV(z) < right_IV(z+6))), and(right_IV(z) < right_IV(z+7), right_IV(z) < right_IV(z+8))) == 1
+      indx = [indx;1]; 
+   else
+       indx = [indx;0];
+       counter = counter+1;
+   end
 end
 if counter ~= 0
     index = find(indx == 1);
@@ -113,21 +105,21 @@ IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
 
 
 %% Plot implied vol against strike
-clf;
-plot(Kdiff_original./F, model, 'LineStyle', 'no', 'Marker', 'o')
-hold on
-plot(Kdiff./F, IVdiff, 'LineStyle', 'no', 'Marker', '*')
-hold on
-plot(Kdiff_original./F, IVdiff_original, 'LineStyle', 'no', 'Marker', '+')
-xlabel('Moneyness')
-ylabel('Implied Vol')
-title(['DTM = ' num2str(T*365)])
-legend('best fit', 'filtered data', 'raw data')
+% clf;
+% plot(Kdiff_original./F, model, 'LineStyle', 'no', 'Marker', 'o')
+% hold on
+% plot(Kdiff./F, IVdiff, 'LineStyle', 'no', 'Marker', '*')
+% hold on
+% plot(Kdiff_original./F, IVdiff_original, 'LineStyle', 'no', 'Marker', '+')
+% xlabel('Moneyness')
+% ylabel('Implied Vol')
+% title(['DTM = ' num2str(T*365)])
+% legend('best fit', 'filtered data', 'raw data')
 
 
 % Use model implied vol and original K for integral calc. This is a TEST
 % ONLY
-Kdiff = Kdiff_original; IVdiff = model;
+%Kdiff = Kdiff_original; IVdiff = model;
 
 
 %% Continue with integral calc

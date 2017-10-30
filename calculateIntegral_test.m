@@ -53,7 +53,7 @@ for z = 1:length(moneyness)
 end
 if counter ~= 0
     index = find(indx == 1);
-    Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F
+    Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F;
 else
 end
 % Step-size filter
@@ -61,7 +61,7 @@ counter = 0;
 indx = ones((length(moneyness)-1),1);
 for z=1:(length(moneyness)-1)
     step_size = sqrt((moneyness(z)-moneyness(z+1)).^2);
-    if step_size > 0.01
+    if step_size > 0.1
         indx(z) = 0;
         counter = counter + 1;
     else
@@ -72,11 +72,16 @@ if counter ~= 0
     Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F;
 else
 end
-if ((moneyness(length(moneyness)) - moneyness(length(moneyness)-1))) > 0.01
-    Kdiff(length(moneyness)) = []; IVdiff(length(moneyness)) = [];
+if length(moneyness) > 0
+    if ( moneyness(length(moneyness))  - moneyness(length(moneyness) - 1)  ) > 0.01
+        Kdiff(length(moneyness)) = []; IVdiff(length(moneyness)) = [];
+    else
+    end
+    Kdiff_original = Kdiff; IVdiff_original = IVdiff;
 else
+    Kdiff_original = Kdiff; IVdiff_original = IVdiff;
 end
-Kdiff_original = Kdiff; IVdiff_original = IVdiff;
+
 %% Outlier Filtering
 p = polyfit(Kdiff, IVdiff, 3);
 model = p(1).*Kdiff.^3 + p(2).*Kdiff.^2 + p(3).*Kdiff + p(4);
@@ -159,13 +164,16 @@ IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
 
 
 %% Continue with integral calc
-try
-    f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
-    Integral = quadgk(f,Klevels(1), Klevels(2));
-catch
-    disp('went into NaN in integral calc')
-    Integral = NaN;
-end
+
+f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
+Integral = quadgk(f,Klevels(1), Klevels(2));
+% try
+%     f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
+%     Integral = quadgk(f,Klevels(1), Klevels(2));
+% catch
+%     disp('went into NaN in integral calc')
+%     Integral = NaN;
+% end
 
 
 

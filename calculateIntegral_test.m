@@ -61,7 +61,7 @@ counter = 0;
 indx = ones((length(moneyness)-1),1);
 for z=1:(length(moneyness)-1)
     step_size = sqrt((moneyness(z)-moneyness(z+1)).^2);
-    if step_size > 0.1
+    if step_size > 0.02
         indx(z) = 0;
         counter = counter + 1;
     else
@@ -123,6 +123,11 @@ else
     left_IV = flipud(left_IV); K_left = flipud(K_left);
 end
 
+if (left_IV(length(left_IV)) - left_IV(length(left_IV) - 1)) < 0
+    left_IV(length(left_IV)) = []; K_left(length(K_left)) = [];
+else
+end
+
 % Right side
 counter = 0;
 indx = [];
@@ -139,6 +144,11 @@ if counter ~= 0
     right_IV = right_IV(index); K_right = K_right(index); 
 else
     right_IV = right_IV; K_right = K_right;
+end
+
+if (right_IV(length(right_IV)) - right_IV(length(right_IV) - 1)) < 0
+    right_IV(length(right_IV)) = []; K_right(length(K_right)) = [];
+else
 end
 
 % Re-package IVs and strikes
@@ -164,16 +174,13 @@ IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
 
 
 %% Continue with integral calc
-
-f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
-Integral = quadgk(f,Klevels(1), Klevels(2));
-% try
-%     f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
-%     Integral = quadgk(f,Klevels(1), Klevels(2));
-% catch
-%     disp('went into NaN in integral calc')
-%     Integral = NaN;
-% end
+try
+    f = @(k) M(SplineType, k, Kdiff, IVdiff, r, T, F).*feval(func,k,F);
+    Integral = quadgk(f,Klevels(1), Klevels(2));
+catch
+    disp('went into NaN in integral calc')
+    Integral = NaN;
+end
 
 
 

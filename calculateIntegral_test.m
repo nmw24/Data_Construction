@@ -45,42 +45,72 @@ moneyness = Kdiff./F;
 counter = 0;
 indx = ones(length(moneyness),1);
 for z = 1:length(moneyness)
-   if moneyness(z) > 1.1
-       counter = counter + 1;
-       indx(z) = 0;
-   else
-   end
+    if moneyness(z) > 1.1
+        counter = counter + 1;
+        indx(z) = 0;
+    else
+    end
 end
 if counter ~= 0
     index = find(indx == 1);
     Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F;
 else
 end
+
+counter = 0;
+indx = ones(length(moneyness),1);
+for z = 1:length(moneyness)
+    if moneyness(z) < 0.85
+        counter = counter + 1;
+        indx(z) = 0;
+    else
+    end
+end
+if counter ~= 0
+    index = find(indx == 1);
+    Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F;
+else
+end
+
 % Step-size filter
 counter = 0;
 indx = ones((length(moneyness)-1),1);
 for z=1:(length(moneyness)-1)
-    step_size = sqrt((moneyness(z)-moneyness(z+1)).^2);
+    step_size = abs(moneyness(z)-moneyness(z+1));
     if step_size > 0.02
         indx(z) = 0;
         counter = counter + 1;
     else
     end
 end
+moneyness;
 if counter ~= 0
     index = find(indx == 1);
     Kdiff = Kdiff(index); IVdiff = IVdiff(index); moneyness = Kdiff./F;
 else
 end
+
+
 if length(moneyness) > 0
     if ( moneyness(length(moneyness))  - moneyness(length(moneyness) - 1)  ) > 0.01
-        Kdiff(length(moneyness)) = []; IVdiff(length(moneyness)) = [];
+        Kdiff(length(moneyness)) = []; IVdiff(length(moneyness)) = []; moneyness(length(moneyness)) = [];
     else
     end
     Kdiff_original = Kdiff; IVdiff_original = IVdiff;
 else
     Kdiff_original = Kdiff; IVdiff_original = IVdiff;
 end
+
+if length(moneyness) > 0
+    if ( moneyness(2)  - moneyness(1)  ) > 0.01
+        Kdiff(1) = []; IVdiff(1) = []; moneyness(1) = [];
+    else
+    end
+    Kdiff_original = Kdiff; IVdiff_original = IVdiff;
+else
+    Kdiff_original = Kdiff; IVdiff_original = IVdiff;
+end
+
 
 %% Outlier Filtering
 p = polyfit(Kdiff, IVdiff, 3);
@@ -89,14 +119,14 @@ model = p(1).*Kdiff.^3 + p(2).*Kdiff.^2 + p(3).*Kdiff + p(4);
 
 diff = sqrt((model - IVdiff).^2);
 for z = 1:length(diff)
-   if (100*diff(z)) > 3
-       IVdiff(z) = NaN; Kdiff(z) = NaN; 
-   else
-   end
-       
+    if (100*diff(z)) > 3
+        IVdiff(z) = NaN; Kdiff(z) = NaN;
+    else
+    end
+    
 end
 index = find(~isnan(IVdiff) == 1);
-IVdiff = IVdiff(index); Kdiff = Kdiff(index); 
+IVdiff = IVdiff(index); Kdiff = Kdiff(index);
 
 %% Monotonicity Filtering
 min_indx = find(IVdiff == min(IVdiff));
@@ -109,47 +139,43 @@ K_right = Kdiff((min_indx + 1):length(Kdiff));
 counter = 0;
 indx = [];
 for z = 1:(length(left_IV)-8)
-   if and(and(and(and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)),and(left_IV(z) < left_IV(z+3), left_IV(z) < left_IV(z+4))),and(left_IV(z) < left_IV(z+5), left_IV(z) < left_IV(z+6))), and(left_IV(z) < left_IV(z+7), left_IV(z) < left_IV(z+8))) == 1
-      indx = [indx;1]; 
-   else
-       indx = [indx;0];
-       counter = counter+1;
-   end
+    if and(and(and(and(left_IV(z) < left_IV(z+1), left_IV(z) < left_IV(z+2)),and(left_IV(z) < left_IV(z+3), left_IV(z) < left_IV(z+4))),and(left_IV(z) < left_IV(z+5), left_IV(z) < left_IV(z+6))), and(left_IV(z) < left_IV(z+7), left_IV(z) < left_IV(z+8))) == 1
+        indx = [indx;1];
+    else
+        indx = [indx;0];
+        counter = counter+1;
+    end
 end
 if counter ~= 0
     index = find(indx == 1);
-    left_IV = flipud(left_IV(index)); K_left = flipud(K_left(index)); 
+    left_IV = flipud(left_IV(index)); K_left = flipud(K_left(index));
 else
     left_IV = flipud(left_IV); K_left = flipud(K_left);
 end
 
-if (left_IV(length(left_IV)) - left_IV(length(left_IV) - 1)) < 0
-    left_IV(length(left_IV)) = []; K_left(length(K_left)) = [];
-else
-end
 
 % Right side
 counter = 0;
 indx = [];
 for z = 1:(length(right_IV)-6)
-   if and(and(and(right_IV(z) < right_IV(z+1), right_IV(z) < right_IV(z+2)),and(right_IV(z) < right_IV(z+3), right_IV(z) < right_IV(z+4))),and(right_IV(z) < right_IV(z+5), right_IV(z) < right_IV(z+6))) == 1
-      indx = [indx;1]; 
-   else
-       indx = [indx;0];
-       counter = counter+1;
-   end
+    if and(and(and(right_IV(z) < right_IV(z+1), right_IV(z) < right_IV(z+2)),and(right_IV(z) < right_IV(z+3), right_IV(z) < right_IV(z+4))),and(right_IV(z) < right_IV(z+5), right_IV(z) < right_IV(z+6))) == 1
+        indx = [indx;1];
+    else
+        indx = [indx;0];
+        counter = counter+1;
+    end
 end
 if counter ~= 0
     index = find(indx == 1);
-    right_IV = right_IV(index); K_right = K_right(index); 
+    right_IV = right_IV(index); K_right = K_right(index);
 else
     right_IV = right_IV; K_right = K_right;
 end
 
-if (right_IV(length(right_IV)) - right_IV(length(right_IV) - 1)) < 0
-    right_IV(length(right_IV)) = []; K_right(length(K_right)) = [];
-else
-end
+% if (right_IV(length(right_IV)) - right_IV(length(right_IV) - 1)) < 0
+%     right_IV(length(right_IV)) = []; K_right(length(K_right)) = [];
+% else
+% end
 
 % Re-package IVs and strikes
 IVdiff = [left_IV; right_IV]; Kdiff = [K_left; K_right];
